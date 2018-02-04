@@ -21,7 +21,6 @@ module.exports = class NeeoDevice extends EventEmitter {
                 .setManufacturer(manufacturer)
                 .setType(type)
                 .addButtonHander((name, deviceId) => { this.onButtonPressed(name, deviceId) })
-                .registerInitialiseFunction(() => { this.onInitialise() })
                 .registerSubscriptionFunction((updateCallback) => { this.updateCallback = updateCallback });
     }
 
@@ -54,6 +53,14 @@ module.exports = class NeeoDevice extends EventEmitter {
             case 'PAUSE':
                 this.onPause(deviceId);
                 break;
+
+            case 'NEXT':
+                this.onNext(deviceId);
+                break;
+
+            case 'PREVIOUS':
+                this.onPrevious(deviceId);
+                break;
             
             default:
                 console.error("Unhandled button  ",  name, " pressed.");
@@ -73,6 +80,14 @@ module.exports = class NeeoDevice extends EventEmitter {
     }
 
     onPause(deviceId) {
+        handlerNotImplemented();
+    }
+
+    onNext(deviceId) {
+        handlerNotImplemented();
+    }
+
+    onPrevious(deviceId) {
         handlerNotImplemented();
     }
 

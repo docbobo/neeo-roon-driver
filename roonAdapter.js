@@ -72,4 +72,14 @@ module.exports = class RoonAdapter extends EventEmitter {
         let transport = this._core.services.RoonApiTransport;
         transport.control({ zone_id: zoneId }, "pause", log_error);
     }
+
+    next(zoneId) {
+        let transport = this._core.services.RoonApiTransport;
+        transport.control({ zone_id: zoneId }, "next", log_error);
+    }
+
+    previous(zoneId) {
+        let transport = this._core.services.RoonApiTransport;
+        transport.control({ zone_id: zoneId }, "previous", log_error);
+    }
 };

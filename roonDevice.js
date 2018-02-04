@@ -25,18 +25,21 @@ module.exports = class RoonDevice extends NeeoDevice {
         this._config = config;
 
         // TODO: addCapability not working as expecting, pretending we support power. https://github.com/NEEOInc/neeo-sdk/issues/66
-        // this.addCapability('alwaysOn')
-        this.addButtonGroup('Power');
+        this.addCapability('alwaysOn')
+        this.addButtonGroup('Power')
+            .addButtonGroup('Transport Scan');
 
         this.addTextLabel(MACRO_ARTIST, 'Artist')
             .addTextLabel(MACRO_ALBUM, 'Album')
-            .addTextLabel(MACRO_TRACK, 'Track')
+            .addTextLabel(MACRO_TRACK, 'Track');
 
         // Since Roon doesn't support 'STOP', we cannot use the button group 'Transport'
         this.addButton(MACRO_PLAY)
             .addButton(MACRO_PAUSE);
         
         this.enableDiscovery("Roon Core", "The music player for music lovers", () => { return this.getZones() });
+
+        this.on('registered', () => { this.onInitialise() });
     }
 
     onInitialise() {
@@ -45,8 +48,8 @@ module.exports = class RoonDevice extends NeeoDevice {
     }
 
     now_playing(zoneId, data) {
-        this.setValue(MACRO_TRACK, data.three_line.line1, zoneId);
         this.setValue(MACRO_ARTIST, data.three_line.line2, zoneId);
+        this.setValue(MACRO_TRACK, data.three_line.line1, zoneId);
         this.setValue(MACRO_ALBUM, data.three_line.line3, zoneId);
     }
 
@@ -64,6 +67,14 @@ module.exports = class RoonDevice extends NeeoDevice {
 
     onPause(deviceId) {
         this._roonAdapter.pause(deviceId);
+    }
+
+    onNext(deviceId) {
+        this._roonAdapter.next(deviceId);
+    }
+
+    onPrevious(deviceId) {
+        this._roonAdapter.previous(deviceId);
     }
 
     getZones() {        

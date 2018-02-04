@@ -41,6 +41,8 @@ let roonDeviceConfig = {
 let roonDevice = new RoonDevice(roonAdapter, roonDeviceConfig);
 neeoAdapter.addDevice(roonDevice);
 
-neeoAdapter.start().catch((error) => {
+neeoAdapter.start().then(() => {
+    neeoAdapter.devices.forEach((device) => device.emit('registered'));
+}).catch((error) => {
     console.error(error);
 });
