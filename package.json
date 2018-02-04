@@ -1,0 +1,16 @@
+{
+    "name": "neeo-roon-driver",
+    "version": "0.0.1",
+    "author": "Doc Bobo <boris@pruessmann.org> (https://blog.pruessmann.org/)",
+    "main": "app.js",
+    "dependencies": {
+        "debug": "^3.1.0",
+        "body-parser": "^1.18.2",
+        "express": "4.x",
+        "socket.io": "^2.0.4",
+        "node-roon-api": "github:roonlabs/node-roon-api",
+        "node-roon-api-status": "github:roonlabs/node-roon-api-status",
+        "node-roon-api-transport": "github:roonlabs/node-roon-api-transport",
+        "neeo-sdk": "*"
+    }
+}
