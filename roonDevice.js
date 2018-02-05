@@ -1,8 +1,8 @@
 'use strict';
 
-const debug      = require('debug')('neeo-roon-driver'),
-      NeeoAPI    = require('neeo-sdk'),
-      NeeoDevice = require('./neeoDevice');
+const debug   = require('debug')('neeo-roon-driver'),
+      Neeo    = require('./lib/neeo'),
+      Promise = require('bluebird');
 
 const MACRO_ALBUM  = 'albumname';
 const MACRO_ARTIST = 'artistname';
@@ -11,20 +11,20 @@ const MACRO_TRACK  = 'trackname';
 const MACRO_PLAY  = 'PLAY';
 const MACRO_PAUSE = 'PAUSE';
 
-module.exports = class RoonDevice extends NeeoDevice {
+module.exports = class RoonDevice extends Neeo.Device {
     constructor(roonAdapter, config) {
         try {
             // Device type "AUDIO" requires a patched version of the NEEO sdk.
             super('AUDIO', config.driverName, config.driverManufacturer, 'org.pruessmann.neeo-roon-driver');
         } catch (error) {
-            console.error('Device type "AUDIO" not supported. Falling back to "MEDIAPLAYER"');
-            super('MEDIAPLAYER', driverName, driverManufacturer);
+            console.error('[neeo-roon-driver] Device type "AUDIO" not supported. Falling back to "MEDIAPLAYER"');
+            super('MEDIAPLAYER', config.driverName, config.driverManufacturer, 'org.pruessmann.neeo-roon-driver');
         }
 
         this._roonAdapter = roonAdapter;
         this._config = config;
 
-        // TODO: addCapability not working as expecting, pretending we support power. https://github.com/NEEOInc/neeo-sdk/issues/66
+        // HACK: addCapability not working as expecting, pretending we support power. https://github.com/NEEOInc/neeo-sdk/issues/66
         this.addCapability('alwaysOn')
         this.addButtonGroup('Power')
             .addButtonGroup('Transport Scan');
@@ -48,17 +48,21 @@ module.exports = class RoonDevice extends NeeoDevice {
     }
 
     now_playing(zoneId, data) {
-        this.setValue(MACRO_ARTIST, data.three_line.line2, zoneId);
-        this.setValue(MACRO_TRACK, data.three_line.line1, zoneId);
-        this.setValue(MACRO_ALBUM, data.three_line.line3, zoneId);
+        Promise.join(
+            this.setValue(zoneId, MACRO_ARTIST, data.three_line.line2),
+            this.setValue(zoneId, MACRO_TRACK, data.three_line.line1),
+            this.setValue(zoneId, MACRO_ALBUM, data.three_line.line3)).
+        catch((error) => {
+            console.error('[neeo-roon-driver] ERROR: "%s"', error.message);
+        })
     }
 
     onPowerOn(deviceId) {
-        this.onButtonPressed(this._config.powerOn, deviceId);
+        this.markDevicePoweredOn();
     }
 
     onPowerOff(deviceId) {
-        this.onButtonPressed(this._config.powerOff, deviceId);
+        this.markDevicePoweredOff();
     }
 
     onPlay(deviceId) {

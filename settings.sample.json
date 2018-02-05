@@ -1,0 +1,9 @@
+{
+    "roon": {
+        "driverName": "Core",
+        "driverManufacturer": "Roon"
+    },
+    "neeo": {
+        "port": 4242
+    }
+}

@@ -1,48 +1,38 @@
 'use strict';
 
-const debug = require('debug')('neeo-roon-driver'),
-      config = require('./settings')();
+const debug   = require('debug')('neeo-roon-driver'),
+      config  = require('./lib/util/settings')(),
+      Promise = require('bluebird');
 
-const RoonApi          = require('node-roon-api'),
-      RoonApiStatus    = require('node-roon-api-status'),
-      RoonApiTransport = require('node-roon-api-transport');
-
-const RoonAdapter = require('./roonAdapter'),
-      RoonDevice  = require('./roonDevice'),
-      NeeoDevice  = require('./neeoDevice'), 
-      NeeoAdapter = require('./neeoAdapter');
+const RoonDevice  = require('./roonDevice'),
+      Neeo        = require('./lib/neeo'),
+      Roon        = require('./lib/roon');
 
 // Setup Roon
-var roonAdapter = new RoonAdapter("org.pruessmann.neeo-roon-driver", "NEEO Driver", "0.0.1", "Doc Bobo", "boris@pruessmann.org");
-var roon = new RoonApi(roonAdapter);
-var svc_status = new RoonApiStatus(roon);
+// TODO: Parameter object pattern
+const roonAdapter = new Roon.Adapter("org.pruessmann.neeo-roon-driver", "NEEO Driver", "0.0.1", "Doc Bobo", "boris@pruessmann.org");
 
-roon.init_services({
-    required_services: [ RoonApiTransport ],
-    provided_services: [ svc_status ]
-});
-svc_status.set_status("Extenstion enabled", false);
-roon.start_discovery();
+const roonDeviceConfig = {
+    driverName: config.roon.driverName || 'Core',
+    driverManufacturer: config.roon.driverManufacturer || 'Roon'
+};
+const roonDevice = new RoonDevice(roonAdapter, roonDeviceConfig);
 
-let neeoConfig = { 
+// Setup Neeo
+const neeoConfig = { 
     name: "neeo-roon-driver", 
-    port: config.neeo.port || 4242 
+    driverManufacturer: config.roon.driverManufacturer || 'Roon',
+    port: config.neeo.port || 4242
 };
-let neeoAdapter = new NeeoAdapter(neeoConfig);
-
-let roonDeviceConfig = {
-    driverName : config.roon.driverName || 'Core',
-    driverManufacturer : config.roon.driverManufacturer || 'Roon',
-
-    powerOn: config.roon.powerOn || 'NONE',
-    powerOff: config.roon.powerOff || 'NONE'
-};
-
-let roonDevice = new RoonDevice(roonAdapter, roonDeviceConfig);
+const neeoAdapter = new Neeo.Adapter(neeoConfig);
 neeoAdapter.addDevice(roonDevice);
 
-neeoAdapter.start().then(() => {
+Promise.join(
+    roonAdapter.start(),
+    neeoAdapter.start()
+).then(() => {
     neeoAdapter.devices.forEach((device) => device.emit('registered'));
 }).catch((error) => {
-    console.error(error);
+    console.error('[neeo-roon-driver] ERROR: "%s"', error.message);
+    process.exit(1);
 });
