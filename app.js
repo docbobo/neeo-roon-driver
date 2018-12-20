@@ -13,7 +13,7 @@ const RoonDevice  = require('./roonDevice'),
 const roonAdapter = new Roon.Adapter("org.pruessmann.neeo-roon-driver", "NEEO Driver", "0.0.1", "Doc Bobo", "boris@pruessmann.org");
 
 const roonDeviceConfig = {
-    driverName: config.roon.driverName || 'Core',
+    driverName: config.roon.driverName || 'Zone',
     driverManufacturer: config.roon.driverManufacturer || 'Roon'
 };
 const roonDevice = new RoonDevice(roonAdapter, roonDeviceConfig);
