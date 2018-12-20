@@ -13,13 +13,7 @@ const MACRO_PAUSE = 'PAUSE';
 
 module.exports = class RoonDevice extends Neeo.Device {
     constructor(roonAdapter, config) {
-        try {
-            // Device type "AUDIO" requires a patched version of the NEEO sdk.
-            super('AUDIO', config.driverName, config.driverManufacturer, 'org.pruessmann.neeo-roon-driver');
-        } catch (error) {
-            console.error('[neeo-roon-driver] Device type "AUDIO" not supported. Falling back to "MEDIAPLAYER"');
-            super('MEDIAPLAYER', config.driverName, config.driverManufacturer, 'org.pruessmann.neeo-roon-driver');
-        }
+        super('MUSICPLAYER', config.driverName, config.driverManufacturer, 'org.pruessmann.neeo-roon-driver');
 
         this._roonAdapter = roonAdapter;
         this._config = config;
@@ -27,16 +21,14 @@ module.exports = class RoonDevice extends Neeo.Device {
         // HACK: addCapability not working as expecting, pretending we support power. https://github.com/NEEOInc/neeo-sdk/issues/66
         this.addCapability('alwaysOn')
         this.addButtonGroup('Power')
+            .addButtonGroup('Transport')
+            .addButtonGroup('Transport Search')
             .addButtonGroup('Transport Scan');
 
         this.addTextLabel(MACRO_ARTIST, 'Artist')
             .addTextLabel(MACRO_ALBUM, 'Album')
             .addTextLabel(MACRO_TRACK, 'Track');
 
-        // Since Roon doesn't support 'STOP', we cannot use the button group 'Transport'
-        this.addButton(MACRO_PLAY)
-            .addButton(MACRO_PAUSE);
-        
         this.enableDiscovery("Roon Core", "The music player for music lovers", () => { return this.getZones() });
 
         this.on('registered', () => { this.onInitialise() });
@@ -73,12 +65,24 @@ module.exports = class RoonDevice extends Neeo.Device {
         this._roonAdapter.pause(deviceId);
     }
 
+    onStop(deviceId) {
+        this._roonAdapter.stop(deviceId);
+    }
+
     onNext(deviceId) {
         this._roonAdapter.next(deviceId);
     }
 
     onPrevious(deviceId) {
         this._roonAdapter.previous(deviceId);
+    }
+
+    onForward(deviceId) {
+        this._roonAdapter.seek(deviceId, 5);
+    }
+
+    onReverse(deviceId) {
+        this._roonAdapter.seek(deviceId, -5);
     }
 
     getZones() {        
