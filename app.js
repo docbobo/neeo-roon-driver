@@ -22,7 +22,8 @@ const roonDevice = new RoonDevice(roonAdapter, roonDeviceConfig);
 const neeoConfig = { 
     name: "neeo-roon-driver", 
     driverManufacturer: config.roon.driverManufacturer || 'Roon',
-    port: config.neeo.port || 4242
+    port: config.neeo.port || 4242,
+    brain: config.neeo.brain || null
 };
 const neeoAdapter = new Neeo.Adapter(neeoConfig);
 neeoAdapter.addDevice(roonDevice);

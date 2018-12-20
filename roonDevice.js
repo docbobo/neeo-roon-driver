@@ -20,6 +20,7 @@ module.exports = class RoonDevice extends Neeo.Device {
 
         // HACK: addCapability not working as expecting, pretending we support power. https://github.com/NEEOInc/neeo-sdk/issues/66
         this.addCapability('alwaysOn')
+        this.addCapability('addAnotherDevice');
         this.addButtonGroup('Power')
             .addButtonGroup('Transport')
             .addButtonGroup('Transport Search')
@@ -37,6 +38,18 @@ module.exports = class RoonDevice extends Neeo.Device {
     onInitialise() {
         debug("onInitialise()");
         this._roonAdapter.on('now_playing', (zoneId, data) => { this.now_playing(zoneId, data) });
+    }
+
+    onDeviceAdded(deviceId) {
+        debug("onDeviceAdded(%o)", deviceId);
+    }
+
+    onDeviceRemoved(deviceId) {
+        debug("onDeviceRemoved(%o)", deviceId);
+    }
+
+    onInitializeDeviceList(deviceIds) {
+        debug("onInitializeDeviceList(%o)", deviceIds);
     }
 
     now_playing(zoneId, data) {
