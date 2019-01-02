@@ -10,6 +10,7 @@
         "neeo-sdk": "*",
         "node-roon-api": "github:roonlabs/node-roon-api",
         "node-roon-api-status": "github:roonlabs/node-roon-api-status",
+        "node-roon-api-source-control": "github:roonlabs/node-roon-api-source-control",
         "node-roon-api-transport": "github:roonlabs/node-roon-api-transport",
         "socket.io": "^2.0.4"
     },

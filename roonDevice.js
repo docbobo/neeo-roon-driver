@@ -2,6 +2,7 @@
 
 const debug   = require('debug')('neeo-roon-driver'),
       Neeo    = require('./lib/neeo'),
+      Roon    = require('./lib/roon'),
       Promise = require('bluebird');
 
 const MACRO_ALBUM  = 'albumname';
@@ -17,9 +18,8 @@ module.exports = class RoonDevice extends Neeo.Device {
 
         this._roonAdapter = roonAdapter;
         this._config = config;
+        this._neeoAdapter = null;
 
-        // HACK: addCapability not working as expecting, pretending we support power. https://github.com/NEEOInc/neeo-sdk/issues/66
-        this.addCapability('alwaysOn')
         this.addCapability('addAnotherDevice');
         this.addButtonGroup('Power')
             .addButtonGroup('Transport')
@@ -35,39 +35,91 @@ module.exports = class RoonDevice extends Neeo.Device {
         this.on('registered', () => { this.onInitialise() });
     }
 
-    onInitialise() {
+    setNeeoAdapter(neeoAdapter) {
+        this._neeoAdapter = neeoAdapter;
+    }
+
+    onInitialise() { 
         debug("onInitialise()");
         this._roonAdapter.on('now_playing', (zoneId, data) => { this.now_playing(zoneId, data) });
     }
 
     onDeviceAdded(deviceId) {
         debug("onDeviceAdded(%o)", deviceId);
+
+        try {
+            const zone = this._roonAdapter.getAllZones().find((element) => {
+                return element.zone_id == deviceId;
+            });
+
+            var neeoAdapter = this._neeoAdapter;
+            this._neeoAdapter.invalidateRecipes();
+
+            this._sourceControl = new Roon.SourceControl(deviceId, zone.display_name, false, {
+                convenience_switch: function() {
+                    neeoAdapter.getRecipe(zone.display_name).then((recipe) => {
+                        recipe.action.powerOn();
+                    }).catch((error) => console.log(error));
+                },
+                standby: function() {
+                    neeoAdapter.getRecipe(zone.display_name).then((recipe) => {
+                        recipe.action.powerOff();
+                    }).catch((error) => console.log(error));
+                }
+            });
+            this._roonAdapter.registerSourceControl(this._sourceControl);
+
+            neeoAdapter.getRecipe(zone.display_name).then((recipe) => {
+                if (recipe.isPoweredOn) {
+                    this._sourceControl.update_state("selected");
+                } else {
+                    this._sourceControl.update_state("standby");
+                }
+            });
+        } catch (error) {
+            console.error('[neeo-roon-driver] ERROR: "%s"', error.message);
+        }
     }
 
     onDeviceRemoved(deviceId) {
         debug("onDeviceRemoved(%o)", deviceId);
+
+        try {
+            this._roonAdapter.unregisterSourceControl(this._sourceControl);
+            this._sourceControl = null;
+        } catch (error) {
+            console.error('[neeo-roon-driver] ERROR: "%s"', error.message);
+        }
     }
 
     onInitializeDeviceList(deviceIds) {
-        debug("onInitializeDeviceList(%o)", deviceIds);
+        deviceIds.forEach((deviceId) => this.onDeviceAdded(deviceId));
     }
 
     now_playing(zoneId, data) {
-        Promise.join(
-            this.setValue(zoneId, MACRO_ARTIST, data.three_line.line2),
-            this.setValue(zoneId, MACRO_TRACK, data.three_line.line1),
-            this.setValue(zoneId, MACRO_ALBUM, data.three_line.line3)).
-        catch((error) => {
+        try {
+            if (data != null) {
+                Promise.join(
+                    this.setValue(zoneId, MACRO_ARTIST, data.three_line.line2),
+                    this.setValue(zoneId, MACRO_TRACK, data.three_line.line1),
+                    this.setValue(zoneId, MACRO_ALBUM, data.three_line.line3)).
+                catch((error) => {
+                    console.error('[neeo-roon-driver] ERROR: "%s"', error.message);
+                })
+            }
+        } catch (error) {
             console.error('[neeo-roon-driver] ERROR: "%s"', error.message);
-        })
+        }
     }
 
     onPowerOn(deviceId) {
-        this.markDevicePoweredOn();
+        //this.markDevicePoweredOn();
+        this._sourceControl.update_state("selected");
     }
 
     onPowerOff(deviceId) {
-        this.markDevicePoweredOff();
+        //this.markDevicePoweredOff();
+        this._sourceControl.update_state("standby");
     }
 
     onPlay(deviceId) {
