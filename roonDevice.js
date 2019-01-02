@@ -14,7 +14,7 @@ const MACRO_PAUSE = 'PAUSE';
 
 module.exports = class RoonDevice extends Neeo.Device {
     constructor(roonAdapter, config) {
-        super('MEDIAPLAYER', config.driverName, config.driverManufacturer, 'org.pruessmann.neeo-roon-driver');
+        super('MUSICPLAYER', config.driverName, config.driverManufacturer, 'org.pruessmann.neeo-roon-driver');
 
         this._roonAdapter = roonAdapter;
         this._config = config;
